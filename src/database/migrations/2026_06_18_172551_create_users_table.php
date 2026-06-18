@@ -15,7 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('username', 50)->unique();
             $table->string('email', 255)->unique();
+            $table->string('password_hash', 255); // Hinweis: Laravel Auth nutzt oft 'password'
+            $table->enum('role', ['user', 'contributor', 'admin'])->default('user');
+            $table->enum('status', ['active', 'banned', 'pending'])->default('active');
             $table->timestamps();
+            $table->softDeletes(); // Erstellt die deleted_at Spalte
         });
     }
 

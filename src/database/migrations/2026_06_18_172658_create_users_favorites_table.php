@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users_favorites', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::create('user_favorites', function (Blueprint $table) {
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('recipe_id')->constrained()->cascadeOnDelete();
+            $table->timestamp('created_at')->useCurrent();
+
+            $table->primary(['user_id', 'recipe_id']);
         });
     }
 
