@@ -1,19 +1,20 @@
 import './bootstrap';
 
-window.addEventListener('load', function() {
-    if(window.location.href.indexOf("recipe") != -1){
+document.addEventListener('DOMContentLoaded', function() {
+    // Prüfe ob wir auf der Recipe-Seite sind (via DOM-Element)
+    if (document.getElementById('carousel-track') ||
+        document.getElementById('ingredients-list')) {
         recipe();
     }
 });
 
 function recipe(){
-    document.addEventListener('DOMContentLoaded', () => {
     const track = document.getElementById('carousel-track');
     const prevBtn = document.getElementById('carousel-prev');
     const nextBtn = document.getElementById('carousel-next');
     const dots = document.querySelectorAll('.carousel-dot');
-    const servLeft = document.getElementById('servings-left')
-    const servRight = document.getElementById('servings-right')
+    const servLeft = document.getElementById('servings-left');
+    const servRight = document.getElementById('servings-right');
 
     if (!track || !prevBtn || !nextBtn) return;
 
@@ -91,33 +92,25 @@ function recipe(){
         }
 
         if (needsReset) {
-            // 1. Klasse hinzufügen: Deaktiviert SOFORT alle Transitionen der Kind-Elemente
             track.classList.add('is-resetting');
             track.style.transition = 'none';
 
-            // 2. Index aktualisieren
             currentIndex = targetIndex;
 
-            // 3. Visuellen Zustand SOFORT anwenden (dank .is-resetting passiert das ohne Animation)
             updateVisuals();
             updateDots();
 
-            // 4. Neue Position berechnen
             const containerWidth = track.parentElement.offsetWidth;
             const itemWidth = allItems[0].offsetWidth;
             const offset = (containerWidth / 2) - (itemWidth / 2) - (currentIndex * itemWidth);
 
-            // 5. Position anwenden
             track.style.transform = `translate3d(${offset}px, 0, 0)`;
 
-            // 6. HARTEN REPAINT ERZWINGEN (Flush Render Queue)
             void track.offsetWidth;
 
-            // 7. Im nächsten Frame die Reset-Klasse entfernen und Transition wieder aktivieren
             requestAnimationFrame(() => {
                 track.classList.remove('is-resetting');
 
-                // Noch ein Frame warten, damit der Browser das Entfernen der Klasse registriert
                 requestAnimationFrame(() => {
                     track.style.transition = `transform ${TRANSITION_DURATION}ms cubic-bezier(0.25, 1, 0.5, 1)`;
                     isTransitioning = false;
@@ -198,7 +191,6 @@ function recipe(){
         if (amount - 1 > 0) {
             updateIngredientsInPlace(scaled, '#ingredients-list');
             servings.textContent = amount - 1;
-            //localStorage.setItem('servings', amount - 1);
         }
     })
 
@@ -214,11 +206,10 @@ function recipe(){
         let scaled = scaleIngredients(list, amount, parseInt(amount) + 1);
         updateIngredientsInPlace(scaled, '#ingredients-list');
         servings.textContent = parseInt(amount) + 1;
-        //localStorage.setItem('servings', parseInt(amount) + 1);
     })
 
     mobile_ingredients();
-});
+}
 
 function mobile_ingredients() {
     const sectionRight = document.getElementById('section-right');
@@ -226,9 +217,7 @@ function mobile_ingredients() {
     const closeBtn = document.getElementById('ingredients__close');
 
     function openMobileMenu() {
-        // 'hidden' entfernen, damit es sichtbar wird
         sectionRight.classList.remove('hidden');
-        // 'fixed inset-0' macht es zu einem Vollbild-Overlay über allem anderen
         sectionRight.classList.add('fixed', 'inset-0', 'z-50', 'overflow-y-auto');
 
         showBtn.classList.add('hidden');
@@ -236,9 +225,7 @@ function mobile_ingredients() {
     }
 
     function closeMobileMenu() {
-        // Overlay-Klassen entfernen
         sectionRight.classList.remove('fixed', 'inset-0', 'z-50', 'overflow-y-auto');
-        // Auf Mobile wieder verstecken (auf Desktop greift weiterhin md:block)
         sectionRight.classList.add('hidden');
 
         closeBtn.classList.add('hidden');
@@ -246,7 +233,6 @@ function mobile_ingredients() {
     }
 
     showBtn.addEventListener('click', () => {
-        // Nur ausführen, wenn der Bildschirm schmaler als 768px ist (Mobile)
         if (window.innerWidth < 768) {
             openMobileMenu();
         }
@@ -258,9 +244,6 @@ function mobile_ingredients() {
         }
     });
 
-    // Optional, aber empfohlen: Falls der User das Browserfenster aufzieht,
-    // während das Menü offen ist, räumen wir die Klassen auf,
-    // damit das Desktop-Layout nicht zerschossen wird.
     window.addEventListener('resize', () => {
         if (window.innerWidth >= 768) {
             sectionRight.classList.remove('fixed', 'inset-0', 'z-50', 'overflow-y-auto');
@@ -269,21 +252,6 @@ function mobile_ingredients() {
         }
     });
 }
-
-/*window.addEventListener('load', function() {
-    if ('servings' in localStorage) {
-        let servings = document.getElementById('servings-amount');
-        let oldAmount = document.getElementById('servings-amount').innerHTML;
-        let list = Array.from(document.getElementById('ingredients-list').children);
-        let amount = localStorage.getItem('servings');
-        let scaled = scaleIngredients(list, oldAmount, parseInt(amount));
-        updateIngredientsInPlace(scaled, '#ingredients-list');
-        servings.textContent = amount;
-    }
-    document.getElementById('ingredients-list').classList.remove('invisible');
-})*/
-
-
 
 function parseIngredient(input) {
     let text = "";
@@ -316,7 +284,6 @@ function parseIngredient(input) {
 }
 
 function scaleIngredients(ingredientTexts, originalPortions, newPortions) {
-    // Sicherstellen, dass es ein Array ist
     if (!Array.isArray(ingredientTexts)) {
         console.error("Es wurde kein Array übergeben!");
         return [];
@@ -325,7 +292,7 @@ function scaleIngredients(ingredientTexts, originalPortions, newPortions) {
     const factor = newPortions / originalPortions;
 
     return ingredientTexts.map(item => {
-        const parsed = parseIngredient(item); // item kann jetzt alles sein
+        const parsed = parseIngredient(item);
 
         if (parsed.isParsed) {
             const newQty = parsed.qty * factor;
@@ -340,7 +307,6 @@ function scaleIngredients(ingredientTexts, originalPortions, newPortions) {
     });
 }
 
-// --- Hilfsfunktionen ---
 function evaluateFraction(str) {
     if (str.includes('/')) {
         const parts = str.split('/');
@@ -370,6 +336,3 @@ function updateIngredientsInPlace(scaledData, ulSelector) {
         }
     });
 }
-
-}
-

@@ -1,48 +1,46 @@
 @extends('layout.app')
-               @section('content')
-                    @php
-            if (!isset($recipe)) {
-                $recipe = (object) [
-                    'title' => 'Rustikaler Gemüse-Wombat-Auflauf',
-                    'description' => 'Rustikaler Gemüse-Wombat-Auflauf mit frischen Kräutern und goldgelber Käsehülle.',
-                    'images' => [
-                        asset('images/wom1.jpg'),
-                        asset('images/wom2.jpg'),
-                        asset('images/wom3.jpg'),
-                    ],
-                    'prepTime' => '40 min',
-                    'cookTime' => '35 min',
-                    'difficulty' => 'hard',
-                    'servings' => '5',
-                    'ingredients' => [
-                        '500g Arsch',
-                        '5 Liter Sterni',
-                        '3 EL Fichstäbchen',
-                        '9 Prisen Vanille Eis',
-                        '5 Becher Staatsräson'
-                    ]
-                ];
-            }
+    @section('content')
+        @php
+            $recipe = (object) [
+                'title' => 'Rustikaler Gemüse-Wombat-Auflauf',
+                'description' => 'Rustikaler Gemüse-Wombat-Auflauf mit frischen Kräutern und goldgelber Käsehülle.',
+                'images' => [
+                    asset('images/wom1.jpg'),
+                    asset('images/wom2.jpg'),
+                    asset('images/wom3.jpg'),
+                ],
+                'prepTime' => '40 min',
+                'cookTime' => '35 min',
+                'difficulty' => 'hard',
+                'servings' => '5',
+                'ingredients' => [
+                    '500g Arsch',
+                    '5 Liter Sterni',
+                    '3 EL Fichstäbchen',
+                    '9 Prisen Vanille Eis',
+                    '5 Becher Staatsräson'
+                ]
+            ];
             $totalImages = count($recipe->images);
         @endphp
-            <div class="w-full max-w-3xl mx-auto text-center mb-6 px-4">
-                <h1 class="text-2xl md:text-3xl font-bold uppercase tracking-wider text-white">
-                    {{ $recipe->title }}
-                </h1>
-                <p class="text-zinc-400 mt-2 text-sm md:text-base font-light">
-                    {{ $recipe->description }}
-                </p>
+        <div class="w-full max-w-3xl mx-auto text-center mb-6 px-4">
+            <h1 class="text-2xl md:text-3xl font-bold uppercase tracking-wider text-white">
+                {{ $recipe->title }}
+            </h1>
+            <p class="text-zinc-400 mt-2 text-sm md:text-base font-light">
+                {{ $recipe->description }}
+            </p>
             </div>
 
             <div class="relative w-full overflow-hidden group">
 
-                <div id="recipe-carousel" class="relative w-full h-[22rem] md:h-[34rem] overflow-hidden">
+                <div id="recipe-carousel" class="relative w-full h-88 md:h-136 overflow-hidden">
                     <div id="carousel-track" class="flex h-full transition-transform duration-500 ease-out">
 
                         {{-- Klone vom Ende (3 Stück) --}}
                         @if($totalImages >= 3)
                             @for($i = 0; $i < 3; $i++)
-                                <div class="carousel-item flex-shrink-0 w-[75%] md:w-[60%] px-2">
+                                <div class="carousel-item shrink-0 w-[75%] md:w-[60%] px-2">
                                     <img src="{{ $recipe->images[$totalImages - 3 + $i] }}" class="w-full h-full object-cover rounded-xl shadow-2xl border border-zinc-900">
                                 </div>
                             @endfor
@@ -50,7 +48,7 @@
 
                         {{-- Originale Bilder --}}
                         @foreach ($recipe->images as $index => $image)
-                            <div class="carousel-item flex-shrink-0 w-[75%] md:w-[60%] px-2" data-index="{{ $index }}">
+                            <div class="carousel-item shrink-0 w-[75%] md:w-[60%] px-2" data-index="{{ $index }}">
                                 <img src="{{ $image }}" class="w-full h-full object-cover rounded-xl shadow-2xl border border-zinc-900">
                             </div>
                         @endforeach
@@ -58,7 +56,7 @@
                         {{-- Klone vom Anfang (3 Stück) --}}
                         @if($totalImages >= 3)
                             @for($i = 0; $i < 3; $i++)
-                                <div class="carousel-item flex-shrink-0 w-[75%] md:w-[60%] px-2">
+                                <div class="carousel-item shrink-0 w-[75%] md:w-[60%] px-2">
                                     <img src="{{ $recipe->images[$i] }}" class="w-full h-full object-cover rounded-xl shadow-2xl border border-zinc-900">
                                 </div>
                             @endfor
@@ -132,7 +130,7 @@
                             </div>
                             <div id="recipe__list">
                             <h2 class="text-emerald-500 text-2xl">Zutatenliste</h2>
-                                <ul id="ingredients-list" class="invisible">
+                                <ul id="ingredients-list" class="invisible md:visible">
                                     @foreach ($recipe->ingredients as $index => $ingredient)
                                         <li>{{ $ingredient }}</li>
                                     @endforeach
