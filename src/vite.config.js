@@ -13,20 +13,21 @@ export default defineConfig({
         }),
     ],
     server: {
-        host: '0.0.0.0', // Erlaubt Zugriffe von ausserhalb des Containers
+        host: '0.0.0.0',
         port: 5173,
         strictPort: true,
         cors: true,
-        origin: 'https://dc-rezepte.duckdns.org',
+        // Keine Fallbacks mehr – muss über ENV gesetzt werden
+        origin: process.env.VITE_ORIGIN,
         allowedHosts: true,
         hmr: {
-            host: 'dc-rezepte.duckdns.org',
-            clientPort: 443,
-            protocol: 'wss',
-            path: '/vite-ws',
+            host: process.env.VITE_HMR_HOST,
+            clientPort: parseInt(process.env.VITE_HMR_CLIENT_PORT || '5173'),
+            protocol: process.env.VITE_HMR_PROTOCOL || 'ws',
+            path: process.env.VITE_HMR_PATH || '/vite-ws',
         },
         watch: {
-            usePolling: true // Wichtig fuer Docker unter LXC, damit Dateiaenderungen sofort erkannt werden
+            usePolling: true
         }
     },
 });

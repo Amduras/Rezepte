@@ -6,10 +6,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/recipe', function() {
-    return view('recipe');
+Route::get('/recipe', function () {
+    return view('recipe', ['title' => 'Rezept']);
 });
 
-Route::get('/addrecipe', function(){
-    return view('addrecipe');
+Route::get('/addrecipe', function () {
+    return view('addrecipe', ['title' => '✏️ Rezept hinzufügen']);
 });

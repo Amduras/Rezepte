@@ -1,14 +1,6 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="bg-[#121212]">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
-
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-        @php
+@extends('layout.app')
+               @section('content')
+                    @php
             if (!isset($recipe)) {
                 $recipe = (object) [
                     'title' => 'Rustikaler Gemüse-Wombat-Auflauf',
@@ -33,14 +25,6 @@
             }
             $totalImages = count($recipe->images);
         @endphp
-
-        <title>{{ $recipe->title }} - DC Rezepte</title>
-    </head>
-    <body class="bg-[#121212] text-zinc-200 font-sans antialiased min-h-screen flex flex-col justify-between relative">
-
-        @include('header')
-        <main class="flex-grow py-8 relative flex flex-col justify-center w-full">
-
             <div class="w-full max-w-3xl mx-auto text-center mb-6 px-4">
                 <h1 class="text-2xl md:text-3xl font-bold uppercase tracking-wider text-white">
                     {{ $recipe->title }}
@@ -158,6 +142,4 @@
                     </div>
                 </div>
             </div>
-        </main>
-    </body>
-</html>
+        @endsection

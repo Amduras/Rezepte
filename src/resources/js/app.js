@@ -1,6 +1,13 @@
 import './bootstrap';
 
-document.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('load', function() {
+    if(window.location.href.indexOf("recipe"){
+        recipe();
+    }
+});
+
+function recipe(){
+    document.addEventListener('DOMContentLoaded', () => {
     const track = document.getElementById('carousel-track');
     const prevBtn = document.getElementById('carousel-prev');
     const nextBtn = document.getElementById('carousel-next');
@@ -191,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (amount - 1 > 0) {
             updateIngredientsInPlace(scaled, '#ingredients-list');
             servings.textContent = amount - 1;
-            localStorage.setItem('servings', amount - 1);
+            //localStorage.setItem('servings', amount - 1);
         }
     })
 
@@ -207,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let scaled = scaleIngredients(list, amount, parseInt(amount) + 1);
         updateIngredientsInPlace(scaled, '#ingredients-list');
         servings.textContent = parseInt(amount) + 1;
-        localStorage.setItem('servings', parseInt(amount) + 1);
+        //localStorage.setItem('servings', parseInt(amount) + 1);
     })
 
     mobile_ingredients();
@@ -263,7 +270,7 @@ function mobile_ingredients() {
     });
 }
 
-window.addEventListener('load', function() {
+/*window.addEventListener('load', function() {
     if ('servings' in localStorage) {
         let servings = document.getElementById('servings-amount');
         let oldAmount = document.getElementById('servings-amount').innerHTML;
@@ -274,10 +281,9 @@ window.addEventListener('load', function() {
         servings.textContent = amount;
     }
     document.getElementById('ingredients-list').classList.remove('invisible');
-})
+})*/
 
-window.addEventListener('click', function(e) {
-});
+
 
 function parseIngredient(input) {
     let text = "";
@@ -364,3 +370,6 @@ function updateIngredientsInPlace(scaledData, ulSelector) {
         }
     });
 }
+
+}
+
