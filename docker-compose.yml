@@ -13,7 +13,9 @@ services:
       SERVICE_TAGS: dev
     volumes:
       - ./src:/var/www
-    # Ports wurden hier entfernt, da Vite jetzt einen eigenen Container hat!
+      - ./docker/entrypoint-app.sh:/docker/entrypoint-app.sh:ro
+    entrypoint: /docker/entrypoint-app.sh
+    command: ["php-fpm"]
     networks:
       - app-network
 
@@ -58,14 +60,15 @@ services:
     working_dir: /var/www
     volumes:
       - ./src:/var/www
+      - ./docker/entrypoint-vite.sh:/docker/entrypoint-vite.sh:ro
     ports:
       - "5173:5173"
     env_file:
       - ./src/.env  # Lädt die Laravel .env Datei
     environment:
       - NODE_ENV=development
-    # Zwingt Vite, im Host-Modus auf allen IPs zu lauschen
-    command: npm run dev -- --host 0.0.0.0
+    entrypoint: /docker/entrypoint-vite.sh
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
     networks:
       - app-network
 
