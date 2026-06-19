@@ -60,13 +60,10 @@ services:
       - ./src:/var/www
     ports:
       - "5173:5173"
+    env_file:
+      - ./src/.env  # Lädt die Laravel .env Datei
     environment:
       - NODE_ENV=development
-      - VITE_ORIGIN
-      - VITE_HMR_HOST
-      - VITE_HMR_CLIENT_PORT
-      - VITE_HMR_PROTOCOL
-      - VITE_HMR_PATH
     # Zwingt Vite, im Host-Modus auf allen IPs zu lauschen
     command: npm run dev -- --host 0.0.0.0
     networks:

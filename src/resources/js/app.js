@@ -1,7 +1,7 @@
 import './bootstrap';
 
 window.addEventListener('load', function() {
-    if(window.location.href.indexOf("recipe"){
+    if(window.location.href.indexOf("recipe") != -1){
         recipe();
     }
 });

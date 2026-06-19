@@ -13,7 +13,7 @@
     <body class="bg-[#121212] text-zinc-200 font-sans antialiased min-h-screen flex flex-col relative">
         @include('header')
 
-        <main class="grow py-8 relative flex flex-col justify-center w-full">
+        <main class="grow py-8 relative flex flex-col w-full">
             @yield('content')
         </main>
     </body>
