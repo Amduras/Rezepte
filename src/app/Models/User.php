@@ -4,12 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\UserRole;
-use App\Enums\UserStatus;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -18,7 +13,13 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
 
-    /** @var list<string> */
+    // 📏 Konstanten für Username-Validierung
+    public const USERNAME_MIN_LENGTH = 4;
+    public const USERNAME_MAX_LENGTH = 50;
+    public const USERNAME_REGEX = '/^[\w\-]+$/';
+
+    protected $table = 'users';
+
     protected $fillable = [
         'username',
         'email',
@@ -27,111 +28,45 @@ class User extends Authenticatable
         'status',
     ];
 
-    /** @var list<string> */
     protected $hidden = [
         'password_hash',
+        'remember_token', // ✅ NEU
     ];
 
-    /**
-     * Moderne Casts mit nativen Enums
-     */
     protected $casts = [
-        'role'         => UserRole::class,
-        'status'       => UserStatus::class,
-        'created_at'   => 'immutable_datetime',
-        'updated_at'   => 'immutable_datetime',
-        'deleted_at'   => 'immutable_datetime',
+        'created_at' => 'immutable_datetime',
+        'updated_at' => 'immutable_datetime',
+        'deleted_at' => 'immutable_datetime',
     ];
 
-    // 🔐 AUTH (Anpassung an password_hash statt password)
-
-    public function getAuthPasswordName(): string
+    public function getAuthPassword(): string
     {
-        return 'password_hash';
+        return $this->password_hash;
     }
-
-    // 🔗 RELATIONEN
-
-    public function recipes(): HasMany
-    {
-        return $this->hasMany(Recipe::class, 'author_id');
-    }
-
-    public function publishedRecipes(): HasMany
-    {
-        return $this->recipes()->where('status', 'published');
-    }
-
-    public function favorites(): BelongsToMany
-    {
-        return $this->belongsToMany(Recipe::class, 'user_favorites')
-            ->withPivot('created_at')
-            ->withTimestamps();
-    }
-
-    // ✅ ROLE-CHECKS (mit Enum)
 
     public function isAdmin(): bool
     {
-        return $this->role === UserRole::Admin;
+        return $this->role === 'admin';
     }
 
     public function isContributor(): bool
     {
-        return $this->role === UserRole::Contributor;
+        return $this->role === 'contributor';
     }
-
-    public function canContribute(): bool
-    {
-        return $this->role->atLeast(UserRole::Contributor);
-    }
-
-    public function hasRoleAtLeast(UserRole $role): bool
-    {
-        return $this->role->atLeast($role);
-    }
-
-    // ✅ STATUS-CHECKS (mit Enum)
 
     public function isActive(): bool
     {
-        return $this->status === UserStatus::Active;
+        return $this->status === 'active';
     }
 
-    public function isBanned(): bool
+    public function recipes()
     {
-        return $this->status === UserStatus::Banned;
+        return $this->hasMany(Recipe::class, 'author_id');
     }
 
-    public function isPending(): bool
+    public function favorites()
     {
-        return $this->status === UserStatus::Pending;
-    }
-
-    // 🔍 SCOPES
-
-    public function scopeActive(Builder $query): Builder
-    {
-        return $query->where('status', UserStatus::Active);
-    }
-
-    public function scopeBanned(Builder $query): Builder
-    {
-        return $query->where('status', UserStatus::Banned);
-    }
-
-    public function scopeWithRole(Builder $query, UserRole $role): Builder
-    {
-        return $query->where('role', $role);
-    }
-
-    public function scopeContributors(Builder $query): Builder
-    {
-        return $query->where('role', UserRole::Contributor);
-    }
-
-    public function scopeAdmins(Builder $query): Builder
-    {
-        return $query->where('role', UserRole::Admin);
+        return $this->belongsToMany(Recipe::class, 'user_favorites')
+            ->withTimestamps();
     }
 }

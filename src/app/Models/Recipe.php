@@ -36,8 +36,6 @@ class Recipe extends Model
     ];
 
     /**
-     * Die korrekten Casts für Laravel 13 / PHP 8.3+
-     *
      * - Native Enums für type-safe ENUM-Spalten
      * - immutable_datetime verhindert Seiteneffekte bei Carbon-Objekten
      * - 'array' castet JSON automatisch in PHP-Arrays
@@ -55,7 +53,6 @@ class Recipe extends Model
         'deleted_at' => 'immutable_datetime',
     ];
 
-    // 🔗 RELATIONEN
 
     public function author(): BelongsTo
     {
@@ -79,7 +76,6 @@ class Recipe extends Model
             ->withTimestamps();
     }
 
-    // 🧮 ACCESSORS
 
     public function getTotalTimeAttribute(): ?int
     {
@@ -106,7 +102,6 @@ class Recipe extends Model
         return $remaining > 0 ? "{$hours} Std. {$remaining} Min." : "{$hours} Std.";
     }
 
-    // ✅ STATUS-CHECKS (nutzen jetzt die Enums!)
 
     public function isPublished(): bool
     {
@@ -138,7 +133,6 @@ class Recipe extends Model
         return $this->difficulty === RecipeDifficulty::Hard;
     }
 
-    // 🔍 QUERY SCOPES
 
     public function scopePublished(Builder $query): Builder
     {

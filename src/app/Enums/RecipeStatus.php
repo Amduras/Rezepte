@@ -13,18 +13,9 @@ enum RecipeStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Draft     => 'Entwurf',
+            self::Draft => 'Entwurf',
             self::Published => 'Veröffentlicht',
-            self::Archived  => 'Archiviert',
-        };
-    }
-
-    public function color(): string
-    {
-        return match ($this) {
-            self::Draft     => 'gray',
-            self::Published => 'green',
-            self::Archived  => 'red',
+            self::Archived => 'Archiviert',
         };
     }
 }

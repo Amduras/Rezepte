@@ -6,28 +6,33 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('username', 50)->unique();
             $table->string('email', 255)->unique();
-            $table->string('password_hash', 255); // Hinweis: Laravel Auth nutzt oft 'password'
+            $table->string('password_hash', 255);
             $table->enum('role', ['user', 'contributor', 'admin'])->default('user');
             $table->enum('status', ['active', 'banned', 'pending'])->default('active');
+            $table->rememberToken();
             $table->timestamps();
-            $table->softDeletes(); // Erstellt die deleted_at Spalte
+            $table->softDeletes();
+        });
+
+        Schema::create('sessions', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->foreignId('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->longText('payload');
+            $table->integer('last_activity')->index();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
+        Schema::dropIfExists('sessions');
         Schema::dropIfExists('users');
     }
 };

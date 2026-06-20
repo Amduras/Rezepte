@@ -6,6 +6,16 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('ingredients-list')) {
         recipe();
     }
+
+    if(document.getElementById('ingredients-list') ||
+        document.getElementById('add-ingredient-btn')) {
+        addIngredient();
+    }
+
+    if (document.getElementById('steps-list') ||
+        document.getElementById('add-step-btn')) {
+        addStep();
+    }
 });
 
 function recipe(){
@@ -335,4 +345,187 @@ function updateIngredientsInPlace(scaledData, ulSelector) {
             console.warn(`Keine Daten für Index ${index}. Element bleibt unverändert:`, li.textContent);
         }
     });
+}
+
+function addIngredient(){
+    const ingredientsList = document.getElementById('ingredients-list');
+    const addIngredientBtn = document.getElementById('add-ingredient-btn');
+
+    if (!ingredientsList || !addIngredientBtn) return;
+
+    let ingredientIndex = 1;
+
+    addIngredientBtn.addEventListener('click', () => {
+        const row = document.createElement('div');
+        row.className = 'ingredient-row w-full md:flex md:items-end gap-4 relative group';
+        row.dataset.index = ingredientIndex;
+
+        row.innerHTML = `
+            <div class="w-full md:w-5/12">
+                <input type="text" name="ingredients[${ingredientIndex}][name]" placeholder="z.B. Mehl" class="block w-full min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-base text-stone-400 placeholder:text-gray-500 sm:text-sm/6 rounded-md outline-1 outline-offset-1 outline-white/10 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-emerald-500/50">
+            </div>
+            <div class="w-full md:w-2/12">
+                <input type="text" name="ingredients[${ingredientIndex}][quantity]" placeholder="z.B. 200" class="block w-full min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-base text-stone-400 placeholder:text-gray-500 sm:text-sm/6 rounded-md outline-1 outline-offset-1 outline-white/10 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-emerald-500/50">
+            </div>
+            <div class="w-full md:w-2/12">
+                <input type="text" name="ingredients[${ingredientIndex}][unit]" placeholder="g, ml, Stk" class="block w-full min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-base text-stone-400 placeholder:text-gray-500 sm:text-sm/6 rounded-md outline-1 outline-offset-1 outline-white/10 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-emerald-500/50">
+            </div>
+            <div class="w-full md:w-2/12">
+                <input type="text" name="ingredients[${ingredientIndex}][note]" placeholder="z.B. gesiebt" class="block w-full min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-base text-stone-400 placeholder:text-gray-500 sm:text-sm/6 rounded-md outline-1 outline-offset-1 outline-white/10 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-emerald-500/50">
+            </div>
+            <button type="button" class="remove-ingredient-btn w-full md:w-1/12 flex items-center justify-center text-red-400 hover:text-red-300 transition-colors py-1.5 cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+            </button>
+        `;
+
+        ingredientsList.appendChild(row);
+        ingredientIndex++;
+        updateRemoveButtons();
+    });
+
+    // --- Zutat entfernen (Event Delegation) ---
+    ingredientsList.addEventListener('click', (e) => {
+        const removeBtn = e.target.closest('.remove-ingredient-btn');
+        if (!removeBtn) return;
+
+        const row = removeBtn.closest('.ingredient-row');
+        if (!row) return;
+
+        // Mindestens eine Zeile muss bleiben
+        if (ingredientsList.querySelectorAll('.ingredient-row').length <= 1) {
+            row.querySelectorAll('input').forEach(input => input.value = '');
+            return;
+        }
+
+        row.remove();
+        reindexIngredients();
+        updateRemoveButtons();
+    });
+
+    // --- Indizes nach dem Löschen neu nummerieren ---
+    function reindexIngredients() {
+        const rows = ingredientsList.querySelectorAll('.ingredient-row');
+        rows.forEach((row, index) => {
+            row.dataset.index = index;
+            row.querySelectorAll('input').forEach(input => {
+                input.name = input.name.replace(/\[\d+\]/, `[${index}]`);
+            });
+        });
+        ingredientIndex = rows.length;
+    }
+
+    // --- Lösch-Button bei der letzten Zeile ausblenden ---
+    function updateRemoveButtons() {
+        const rows = ingredientsList.querySelectorAll('.ingredient-row');
+        rows.forEach((row) => {
+            const btn = row.querySelector('.remove-ingredient-btn');
+            if (btn) {
+                btn.style.visibility = rows.length <= 1 ? 'hidden' : 'visible';
+            }
+        });
+    }
+
+    // Initial aufrufen
+    updateRemoveButtons();
+}
+
+// =============================================
+// Zubereitungsschritte: Hinzufügen & Entfernen
+// =============================================
+
+function addStep() {
+    const stepsList = document.getElementById('steps-list');
+    const addStepBtn = document.getElementById('add-step-btn');
+
+    // 🛑 Früher Exit
+    if (!stepsList || !addStepBtn) return;
+
+    let stepIndex = 1;
+
+    // --- Neuen Schritt hinzufügen ---
+    addStepBtn.addEventListener('click', () => {
+        const row = document.createElement('div');
+        row.className = 'step-row w-full md:flex md:items-start gap-4';
+        row.dataset.index = stepIndex;
+
+        row.innerHTML = `
+            <div class="w-full md:w-1/12 flex md:justify-center items-center">
+                <span class="step-number text-2xl font-bold text-emerald-500">${stepIndex + 1}</span>
+            </div>
+            <div class="w-full md:w-10/12">
+                <textarea name="steps[${stepIndex}][instruction]" rows="3" placeholder="z.B. Mehl in eine große Schüssel sieben..." class="block w-full min-w-0 grow bg-transparent py-1.5 pr-3 pl-1 text-base text-stone-400 placeholder:text-gray-500 sm:text-sm/6 rounded-md outline-1 outline-offset-1 outline-white/10 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-emerald-500/50 resize-y"></textarea>
+            </div>
+            <div class="w-full md:w-1/12 flex md:justify-center items-start pt-6">
+                <button type="button" class="remove-step-btn text-red-400 hover:text-red-300 transition-colors cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+
+        stepsList.appendChild(row);
+        stepIndex++;
+        updateStepRemoveButtons();
+        updateStepNumbers();
+    });
+
+    // --- Schritt entfernen (Event Delegation) ---
+    stepsList.addEventListener('click', (e) => {
+        const removeBtn = e.target.closest('.remove-step-btn');
+        if (!removeBtn) return;
+
+        const row = removeBtn.closest('.step-row');
+        if (!row) return;
+
+        // Mindestens eine Zeile muss bleiben
+        if (stepsList.querySelectorAll('.step-row').length <= 1) {
+            row.querySelector('textarea').value = '';
+            return;
+        }
+
+        row.remove();
+        reindexSteps();
+        updateStepRemoveButtons();
+        updateStepNumbers();
+    });
+
+    // --- Indizes nach dem Löschen neu nummerieren ---
+    function reindexSteps() {
+        const rows = stepsList.querySelectorAll('.step-row');
+        rows.forEach((row, index) => {
+
+            row.dataset.index = index;
+            const textarea = row.querySelector('textarea');
+            textarea.name = textarea.name.replace(/\[\d+\]/, `[${index}]`);
+        });
+        stepIndex = rows.length;
+    }
+
+    // --- Schritt-Nummern aktualisieren ---
+    function updateStepNumbers() {
+        const rows = stepsList.querySelectorAll('.step-row');
+        rows.forEach((row, index) => {
+            const numberSpan = row.querySelector('.step-number');
+            if (numberSpan) {
+                numberSpan.textContent = index + 1;
+            }
+        });
+    }
+
+    // --- Lösch-Button bei der letzten Zeile ausblenden ---
+    function updateStepRemoveButtons() {
+        const rows = stepsList.querySelectorAll('.step-row');
+        rows.forEach((row) => {
+            const btn = row.querySelector('.remove-step-btn');
+            if (btn) {
+                btn.style.visibility = rows.length <= 1 ? 'hidden' : 'visible';
+            }
+        });
+    }
+
+    // Initial aufrufen
+    updateStepRemoveButtons();
 }
