@@ -60,6 +60,6 @@
             &copy; {{ date('Y') }} DC Rezepte
         </div>
     </footer>
-
+@stack('scripts')
 </body>
 </html>

@@ -82,6 +82,20 @@ class RecipeController extends Controller
         ]);
     }
 
+    public function publish(Recipe $recipe): RedirectResponse
+    {
+        if (!$this->canEditRecipe($recipe)) abort(403);
+        $recipe->update(['status' => RecipeStatus::Published]);
+        return back()->with('success', 'Rezept wurde veröffentlicht!');
+    }
+
+    public function unpublish(Recipe $recipe): RedirectResponse
+    {
+        if (!$this->canEditRecipe($recipe)) abort(403);
+        $recipe->update(['status' => RecipeStatus::Draft]);
+        return back()->with('success', 'Rezept wurde als Entwurf gespeichert.');
+    }
+
     /**
      * Aktualisiert ein bestehendes Rezept
      */
@@ -137,7 +151,7 @@ class RecipeController extends Controller
     {
         return DB::transaction(function () use ($request, $recipe): Recipe {
 
-            // 📝 Rezept-Daten
+            //  Rezept-Daten
             $data = [
                 'title'       => $request->input('title'),
                 'description' => $request->input('description'),
@@ -156,17 +170,26 @@ class RecipeController extends Controller
                 $recipe = Recipe::create($data);
             }
 
-            // 🖼️ Bilder verarbeiten
-            if ($request->hasFile('images')) {
-                // Alte Bilder löschen (nur bei Update)
-                if ($recipe && $request->has('replace_images')) {
-                    foreach ($recipe->images as $oldImage) {
+            // ️ Bilder verarbeiten
+            if ($request->boolean('replace_images')) {
+                // Alle alten Bilder löschen
+                foreach ($recipe->images as $oldImage) {
+                    Storage::disk('public')->delete($oldImage->image_url);
+                    $oldImage->delete();
+                }
+            } elseif ($request->has('delete_images')) {
+                // Markierte Bilder löschen
+                $deleteIds = $request->input('delete_images');
+                foreach ($recipe->images as $oldImage) {
+                    if (in_array($oldImage->id, $deleteIds)) {
                         Storage::disk('public')->delete($oldImage->image_url);
                         $oldImage->delete();
                     }
                 }
+            }
 
-                // Neue Bilder speichern
+            // Neue Bilder hinzufügen
+            if ($request->hasFile('images')) {
                 $sortOrder = $recipe->images()->max('sort_order') ?? 0;
                 foreach ($request->file('images') as $image) {
                     $path = $image->store('recipes', 'public');

@@ -1,56 +1,76 @@
 import './bootstrap';
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Prüfe ob wir auf der Recipe-Seite sind (via DOM-Element)
-    if (document.getElementById('carousel-track') ||
+// =============================================
+// 🚀 HAUPT-ENTRY: DOM-Ready
+// =============================================
+document.addEventListener('DOMContentLoaded', () => {
+
+    // Detailseite: Portionen-Skalierung + Mobile Zutaten
+    if (document.getElementById('servings-amount') &&
         document.getElementById('ingredients-list')) {
-        recipe();
+        servingsScaler();
+        mobileIngredients();
     }
 
-    if(document.getElementById('ingredients-list') ||
+    // Detailseite: Endloses Carousel (nur bei 3+ Bildern)
+    if (document.getElementById('carousel-track')) {
+        recipeCarousel();
+    }
+
+    // Startseite: Daily-Carousel
+    if (document.getElementById('daily-carousel')) {
+        dailyCarousel();
+    }
+
+    // Create/Edit: Zutaten dynamisch
+    if (document.getElementById('ingredients-list') &&
         document.getElementById('add-ingredient-btn')) {
         addIngredient();
     }
 
-    if (document.getElementById('steps-list') ||
+    // Create/Edit: Schritte dynamisch
+    if (document.getElementById('steps-list') &&
         document.getElementById('add-step-btn')) {
         addStep();
     }
+
+    // Create/Edit: Bild-Vorschau beim Upload
+    if (document.getElementById('dropzone-file')) {
+        imagePreview();
+    }
 });
 
-function recipe(){
+// =============================================
+// 🎠 DETAILSEITE: Endloses Carousel
+// =============================================
+function recipeCarousel() {
     const track = document.getElementById('carousel-track');
     const prevBtn = document.getElementById('carousel-prev');
     const nextBtn = document.getElementById('carousel-next');
     const dots = document.querySelectorAll('.carousel-dot');
-    const servLeft = document.getElementById('servings-left');
-    const servRight = document.getElementById('servings-right');
 
     if (!track || !prevBtn || !nextBtn) return;
 
     const allItems = Array.from(track.querySelectorAll('.carousel-item'));
     const totalItems = allItems.length;
-    const originalCount = totalItems - 6;
+    const originalCount = totalItems - 6; // 3 Klone vorne + 3 hinten
 
-    if (originalCount < 3) return;
+    if (originalCount < 3) return; // Carousel braucht mindestens 3 Bilder
 
-    let currentIndex = 3;
+    let currentIndex = 3; // Start bei erstem echten Bild (nach den 3 Klonen)
     let isTransitioning = false;
     const TRANSITION_DURATION = 500;
 
     function updateCarousel(animate = true) {
-        if (animate) {
-            track.style.transition = `transform ${TRANSITION_DURATION}ms cubic-bezier(0.25, 1, 0.5, 1)`;
-        } else {
-            track.style.transition = 'none';
-        }
+        track.style.transition = animate
+            ? `transform ${TRANSITION_DURATION}ms cubic-bezier(0.25, 1, 0.5, 1)`
+            : 'none';
 
         const containerWidth = track.parentElement.offsetWidth;
         const itemWidth = allItems[0].offsetWidth;
         const offset = (containerWidth / 2) - (itemWidth / 2) - (currentIndex * itemWidth);
 
         track.style.transform = `translate3d(${offset}px, 0, 0)`;
-
         updateVisuals();
         updateDots();
     }
@@ -102,25 +122,20 @@ function recipe(){
         }
 
         if (needsReset) {
-            track.classList.add('is-resetting');
             track.style.transition = 'none';
-
             currentIndex = targetIndex;
-
             updateVisuals();
             updateDots();
 
             const containerWidth = track.parentElement.offsetWidth;
             const itemWidth = allItems[0].offsetWidth;
             const offset = (containerWidth / 2) - (itemWidth / 2) - (currentIndex * itemWidth);
-
             track.style.transform = `translate3d(${offset}px, 0, 0)`;
 
+            // Force Reflow
             void track.offsetWidth;
 
             requestAnimationFrame(() => {
-                track.classList.remove('is-resetting');
-
                 requestAnimationFrame(() => {
                     track.style.transition = `transform ${TRANSITION_DURATION}ms cubic-bezier(0.25, 1, 0.5, 1)`;
                     isTransitioning = false;
@@ -160,76 +175,145 @@ function recipe(){
         });
     });
 
+    // Keyboard-Navigation
     document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft') goToPrev();
         if (e.key === 'ArrowRight') goToNext();
     });
 
-    window.addEventListener('resize', () => {
-        updateCarousel(false);
-    });
-
+    // Touch-Support
     let touchStartX = 0;
-    let touchEndX = 0;
-
     track.addEventListener('touchstart', (e) => {
         touchStartX = e.changedTouches[0].screenX;
     }, { passive: true });
 
     track.addEventListener('touchend', (e) => {
-        touchEndX = e.changedTouches[0].screenX;
-        const diff = touchStartX - touchEndX;
+        const diff = touchStartX - e.changedTouches[0].screenX;
         if (Math.abs(diff) > 50) {
             diff > 0 ? goToNext() : goToPrev();
         }
     }, { passive: true });
 
-    // Initiale Positionierung
+    // Resize
+    window.addEventListener('resize', () => updateCarousel(false));
+
+    // Init
     updateCarousel(false);
-
-    servLeft.addEventListener('click', (e) => {
-        let servings = document.getElementById('servings-amount');
-        let amount;
-        if ('servings' in localStorage) {
-            amount = localStorage.getItem('servings');
-        } else {
-            console.log('else')
-            amount = document.getElementById('servings-amount').innerHTML;
-        }
-        let list = Array.from(document.getElementById('ingredients-list').children);
-        let scaled = scaleIngredients(list, amount, amount - 1);
-        if (amount - 1 > 0) {
-            updateIngredientsInPlace(scaled, '#ingredients-list');
-            servings.textContent = amount - 1;
-        }
-    })
-
-    servRight.addEventListener('click', () => {
-        let servings = document.getElementById('servings-amount');
-        let amount;
-        if ('servings' in localStorage) {
-            amount = localStorage.getItem('servings');
-        } else {
-            amount = document.getElementById('servings-amount').innerHTML;
-        }
-        let list = Array.from(document.getElementById('ingredients-list').children);
-        let scaled = scaleIngredients(list, amount, parseInt(amount) + 1);
-        updateIngredientsInPlace(scaled, '#ingredients-list');
-        servings.textContent = parseInt(amount) + 1;
-    })
-
-    mobile_ingredients();
 }
 
-function mobile_ingredients() {
+// =============================================
+// 🎲 STARTSEITE: Daily-Carousel (Auto-Play)
+// =============================================
+function dailyCarousel() {
+    const carousel = document.getElementById('daily-carousel');
+    const prevBtn = document.getElementById('daily-prev');
+    const nextBtn = document.getElementById('daily-next');
+    const dots = document.querySelectorAll('.daily-dot');
+    const slides = carousel.querySelectorAll('.daily-slide');
+
+    if (!carousel || slides.length === 0) return;
+
+    let currentIndex = 0;
+    const totalSlides = slides.length;
+    let autoPlayInterval = null;
+
+    function update() {
+        // Auf Mobile: 1 Slide, Tablet: 2, Desktop: 3
+        const slideWidth = slides[0].offsetWidth;
+        carousel.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
+
+        dots.forEach((dot, index) => {
+            if (index === currentIndex) {
+                dot.classList.add('bg-emerald-500', 'w-6');
+                dot.classList.remove('bg-stone-600');
+            } else {
+                dot.classList.remove('bg-emerald-500', 'w-6');
+                dot.classList.add('bg-stone-600');
+            }
+        });
+    }
+
+    function goToNext() {
+        currentIndex = (currentIndex + 1) % totalSlides;
+        update();
+    }
+
+    function goToPrev() {
+        currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+        update();
+    }
+
+    function startAutoPlay() {
+        stopAutoPlay();
+        autoPlayInterval = setInterval(goToNext, 5000);
+    }
+
+    function stopAutoPlay() {
+        if (autoPlayInterval) {
+            clearInterval(autoPlayInterval);
+            autoPlayInterval = null;
+        }
+    }
+
+    // Event Listener
+    nextBtn?.addEventListener('click', () => {
+        goToNext();
+        startAutoPlay(); // Reset Timer nach manueller Interaktion
+    });
+
+    prevBtn?.addEventListener('click', () => {
+        goToPrev();
+        startAutoPlay();
+    });
+
+    dots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+            currentIndex = index;
+            update();
+            startAutoPlay();
+        });
+    });
+
+    // Pause bei Hover
+    carousel.parentElement.addEventListener('mouseenter', stopAutoPlay);
+    carousel.parentElement.addEventListener('mouseleave', startAutoPlay);
+
+    // Touch-Support
+    let touchStartX = 0;
+    carousel.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+        stopAutoPlay();
+    }, { passive: true });
+
+    carousel.addEventListener('touchend', (e) => {
+        const diff = touchStartX - e.changedTouches[0].screenX;
+        if (Math.abs(diff) > 50) {
+            diff > 0 ? goToNext() : goToPrev();
+        }
+        startAutoPlay();
+    }, { passive: true });
+
+    // Resize
+    window.addEventListener('resize', update);
+
+    // Init
+    update();
+    startAutoPlay();
+}
+
+// =============================================
+// 📱 MOBILE: Zutaten-Menü Toggle
+// =============================================
+function mobileIngredients() {
     const sectionRight = document.getElementById('section-right');
     const showBtn = document.getElementById('ingredients__show');
     const closeBtn = document.getElementById('ingredients__close');
 
+    if (!sectionRight || !showBtn || !closeBtn) return;
+
     function openMobileMenu() {
         sectionRight.classList.remove('hidden');
         sectionRight.classList.add('fixed', 'inset-0', 'z-50', 'overflow-y-auto');
-
         showBtn.classList.add('hidden');
         closeBtn.classList.remove('hidden');
     }
@@ -237,21 +321,16 @@ function mobile_ingredients() {
     function closeMobileMenu() {
         sectionRight.classList.remove('fixed', 'inset-0', 'z-50', 'overflow-y-auto');
         sectionRight.classList.add('hidden');
-
         closeBtn.classList.add('hidden');
         showBtn.classList.remove('hidden');
     }
 
     showBtn.addEventListener('click', () => {
-        if (window.innerWidth < 768) {
-            openMobileMenu();
-        }
+        if (window.innerWidth < 768) openMobileMenu();
     });
 
     closeBtn.addEventListener('click', () => {
-        if (window.innerWidth < 768) {
-            closeMobileMenu();
-        }
+        if (window.innerWidth < 768) closeMobileMenu();
     });
 
     window.addEventListener('resize', () => {
@@ -263,97 +342,71 @@ function mobile_ingredients() {
     });
 }
 
-function parseIngredient(input) {
-    let text = "";
+// =============================================
+// 🍽️ PORTIONEN-SKALIERUNG (überarbeitet)
+// =============================================
+function servingsScaler() {
+    const servLeft = document.getElementById('servings-left');
+    const servRight = document.getElementById('servings-right');
+    const servingsEl = document.getElementById('servings-amount');
+    const ingredientsList = document.getElementById('ingredients-list');
 
-    if (input instanceof HTMLElement || input instanceof Element) {
-        text = input.innerText || input.textContent || "";
-    }
-    else if (typeof input === 'object' && input !== null) {
-        text = input.text || input.ingredient || input.name || String(input);
-    }
-    else {
-        text = String(input);
-    }
+    if (!servLeft || !servRight || !servingsEl || !ingredientsList) return;
 
-    text = text.trim();
+    const baseServings = parseInt(ingredientsList.dataset.baseServings) || 1;
 
-    const regex = /^(\d+(?:[.,]\d+)?|\d+\/\d+)\s*([a-zA-ZäöüÄÖÜß\/]*)\s*(.*)$/i;
-    const match = text.match(regex);
-
-    if (match) {
-        let qtyStr = match[1].replace(',', '.');
-        let qty = evaluateFraction(qtyStr);
-        let unit = match[2] || "";
-        let ingredient = match[3] || "";
-
-        return { qty, unit, ingredient, original: text, isParsed: true };
+    function getCurrentServings() {
+        return parseInt(servingsEl.textContent) || baseServings;
     }
 
-    return { qty: 1, unit: "", ingredient: text, original: text, isParsed: false };
-}
-
-function scaleIngredients(ingredientTexts, originalPortions, newPortions) {
-    if (!Array.isArray(ingredientTexts)) {
-        console.error("Es wurde kein Array übergeben!");
-        return [];
+    function formatQuantity(num) {
+        if (Number.isInteger(num)) return num.toString();
+        return parseFloat(num.toFixed(1)).toString().replace('.', ',');
     }
 
-    const factor = newPortions / originalPortions;
+    function updateDisplay() {
+        const currentServings = getCurrentServings();
+        const factor = currentServings / baseServings;
 
-    return ingredientTexts.map(item => {
-        const parsed = parseIngredient(item);
+        ingredientsList.querySelectorAll('li').forEach(li => {
+            const originalQty = parseFloat(li.dataset.quantity?.replace(',', '.'));
 
-        if (parsed.isParsed) {
-            const newQty = parsed.qty * factor;
-            return {
-                ...parsed,
-                newQty: newQty,
-                displayText: `${formatQuantity(newQty)}${parsed.unit ? ' ' + parsed.unit : ''} ${parsed.ingredient}`
-            };
-        } else {
-            return { ...parsed, displayText: parsed.ingredient };
-        }
+            // Wenn keine Menge vorhanden oder keine Zahl → überspringen
+            if (isNaN(originalQty)) return;
+
+            const newQty = originalQty * factor;
+            const qtySpan = li.querySelector('.qty');
+
+            if (qtySpan) {
+                qtySpan.textContent = formatQuantity(newQty);
+            }
+        });
+    }
+
+    servLeft.addEventListener('click', () => {
+        const amount = getCurrentServings();
+        if (amount - 1 <= 0) return;
+        servingsEl.textContent = amount - 1;
+        updateDisplay();
+    });
+
+    servRight.addEventListener('click', () => {
+        const amount = getCurrentServings();
+        servingsEl.textContent = amount + 1;
+        updateDisplay();
     });
 }
 
-function evaluateFraction(str) {
-    if (str.includes('/')) {
-        const parts = str.split('/');
-        return parseFloat(parts[0]) / parseFloat(parts[1]);
-    }
-    return parseFloat(str);
-}
-
-function formatQuantity(num) {
-    if (Number.isInteger(num)) return num.toString();
-    return parseFloat(num.toFixed(1)).toString().replace('.', ',');
-}
-
-function updateIngredientsInPlace(scaledData, ulSelector) {
-    const liElements = document.querySelectorAll(`${ulSelector} li`);
-
-    if (liElements.length === 0) {
-        console.warn(`Keine <li> Elemente gefunden für den Selektor: ${ulSelector}`);
-        return;
-    }
-
-    liElements.forEach((li, index) => {
-        if (scaledData[index]) {
-            li.textContent = scaledData[index].displayText;
-        } else {
-            console.warn(`Keine Daten für Index ${index}. Element bleibt unverändert:`, li.textContent);
-        }
-    });
-}
-
-function addIngredient(){
+// =============================================
+// ➕ ZUTATEN HINZUFÜGEN/ENTFERNEN
+// =============================================
+function addIngredient() {
     const ingredientsList = document.getElementById('ingredients-list');
     const addIngredientBtn = document.getElementById('add-ingredient-btn');
 
     if (!ingredientsList || !addIngredientBtn) return;
 
-    let ingredientIndex = 1;
+    let ingredientIndex = ingredientsList.querySelectorAll('.ingredient-row').length;
 
     addIngredientBtn.addEventListener('click', () => {
         const row = document.createElement('div');
@@ -385,7 +438,6 @@ function addIngredient(){
         updateRemoveButtons();
     });
 
-    // --- Zutat entfernen (Event Delegation) ---
     ingredientsList.addEventListener('click', (e) => {
         const removeBtn = e.target.closest('.remove-ingredient-btn');
         if (!removeBtn) return;
@@ -393,7 +445,6 @@ function addIngredient(){
         const row = removeBtn.closest('.ingredient-row');
         if (!row) return;
 
-        // Mindestens eine Zeile muss bleiben
         if (ingredientsList.querySelectorAll('.ingredient-row').length <= 1) {
             row.querySelectorAll('input').forEach(input => input.value = '');
             return;
@@ -404,7 +455,6 @@ function addIngredient(){
         updateRemoveButtons();
     });
 
-    // --- Indizes nach dem Löschen neu nummerieren ---
     function reindexIngredients() {
         const rows = ingredientsList.querySelectorAll('.ingredient-row');
         rows.forEach((row, index) => {
@@ -416,7 +466,6 @@ function addIngredient(){
         ingredientIndex = rows.length;
     }
 
-    // --- Lösch-Button bei der letzten Zeile ausblenden ---
     function updateRemoveButtons() {
         const rows = ingredientsList.querySelectorAll('.ingredient-row');
         rows.forEach((row) => {
@@ -427,24 +476,20 @@ function addIngredient(){
         });
     }
 
-    // Initial aufrufen
     updateRemoveButtons();
 }
 
 // =============================================
-// Zubereitungsschritte: Hinzufügen & Entfernen
+// ➕ SCHRITTE HINZUFÜGEN/ENTFERNEN
 // =============================================
-
 function addStep() {
     const stepsList = document.getElementById('steps-list');
     const addStepBtn = document.getElementById('add-step-btn');
 
-    // 🛑 Früher Exit
     if (!stepsList || !addStepBtn) return;
 
-    let stepIndex = 1;
+    let stepIndex = stepsList.querySelectorAll('.step-row').length;
 
-    // --- Neuen Schritt hinzufügen ---
     addStepBtn.addEventListener('click', () => {
         const row = document.createElement('div');
         row.className = 'step-row w-full md:flex md:items-start gap-4';
@@ -469,10 +514,8 @@ function addStep() {
         stepsList.appendChild(row);
         stepIndex++;
         updateStepRemoveButtons();
-        updateStepNumbers();
     });
 
-    // --- Schritt entfernen (Event Delegation) ---
     stepsList.addEventListener('click', (e) => {
         const removeBtn = e.target.closest('.remove-step-btn');
         if (!removeBtn) return;
@@ -480,7 +523,6 @@ function addStep() {
         const row = removeBtn.closest('.step-row');
         if (!row) return;
 
-        // Mindestens eine Zeile muss bleiben
         if (stepsList.querySelectorAll('.step-row').length <= 1) {
             row.querySelector('textarea').value = '';
             return;
@@ -492,11 +534,9 @@ function addStep() {
         updateStepNumbers();
     });
 
-    // --- Indizes nach dem Löschen neu nummerieren ---
     function reindexSteps() {
         const rows = stepsList.querySelectorAll('.step-row');
         rows.forEach((row, index) => {
-
             row.dataset.index = index;
             const textarea = row.querySelector('textarea');
             textarea.name = textarea.name.replace(/\[\d+\]/, `[${index}]`);
@@ -504,18 +544,14 @@ function addStep() {
         stepIndex = rows.length;
     }
 
-    // --- Schritt-Nummern aktualisieren ---
     function updateStepNumbers() {
         const rows = stepsList.querySelectorAll('.step-row');
         rows.forEach((row, index) => {
             const numberSpan = row.querySelector('.step-number');
-            if (numberSpan) {
-                numberSpan.textContent = index + 1;
-            }
+            if (numberSpan) numberSpan.textContent = index + 1;
         });
     }
 
-    // --- Lösch-Button bei der letzten Zeile ausblenden ---
     function updateStepRemoveButtons() {
         const rows = stepsList.querySelectorAll('.step-row');
         rows.forEach((row) => {
@@ -526,6 +562,44 @@ function addStep() {
         });
     }
 
-    // Initial aufrufen
     updateStepRemoveButtons();
+}
+
+// =============================================
+// 🖼️ BILD-VORSCHAU beim Upload
+// =============================================
+function imagePreview() {
+    const fileInput = document.getElementById('dropzone-file');
+    if (!fileInput) return;
+
+    // Container für Vorschau anlegen (falls noch nicht vorhanden)
+    let previewContainer = document.getElementById('image-preview-container');
+    if (!previewContainer) {
+        previewContainer = document.createElement('div');
+        previewContainer.id = 'image-preview-container';
+        previewContainer.className = 'grid grid-cols-2 md:grid-cols-4 gap-3 mt-3';
+        fileInput.closest('label').parentElement.appendChild(previewContainer);
+    }
+
+    fileInput.addEventListener('change', (e) => {
+        previewContainer.innerHTML = ''; // Alte Vorschauen löschen
+
+        Array.from(e.target.files).forEach((file) => {
+            if (!file.type.startsWith('image/')) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'relative group';
+                wrapper.innerHTML = `
+                    <img src="${event.target.result}" alt="Vorschau" class="w-full h-32 object-cover rounded-lg border border-stone-700">
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                        <span class="text-white text-xs px-2 py-1 bg-stone-900/80 rounded">Neu</span>
+                    </div>
+                `;
+                previewContainer.appendChild(wrapper);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
 }

@@ -30,8 +30,10 @@ class StoreRecipeRequest extends FormRequest
             'difficulty'  => ['required', Rule::enum(RecipeDifficulty::class)],
             'tags'        => ['nullable', 'string', 'max:500'],
 
-            'images'      => ['nullable', 'array', 'max:10'],
-            'images.*'    => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'images'         => ['nullable', 'array', 'max:10'],
+            'images.*'       => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'delete_images'  => ['nullable', 'array'],
+            'delete_images.*' => ['integer', 'exists:recipe_images,id'],
             'replace_images' => ['nullable', 'boolean'],
 
             'ingredients'                => ['nullable', 'array'],

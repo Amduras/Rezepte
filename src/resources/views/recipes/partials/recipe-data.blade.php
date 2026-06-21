@@ -94,27 +94,63 @@
         </div>
 
         <div class="form__group mt-5 md:w-8/12">
-            <label for="dropzone-file" class="block text-sm/6 font-medium text-stone-400">Bilder:</label>
+            <label class="block text-sm/6 font-medium text-stone-400 mb-2">Bilder:</label>
 
-            @if(isset($recipe) && $recipe->image_url)
-                <div class="mb-3 relative inline-block">
-                    <img src="{{ Storage::url($recipe->image_url) }}" alt="Aktuelles Bild" class="h-32 rounded-lg object-cover">
-                    <p class="text-xs text-stone-500 mt-1">Aktuelles Bild – neue Auswahl ersetzt es.</p>
+            @if(isset($recipe) && $recipe->images->isNotEmpty())
+                <div class="mb-4">
+                    <p class="text-xs text-stone-500 mb-3">Bestehende Bilder (zum Löschen markieren):</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        @foreach($recipe->images as $image)
+                            <div class="relative group">
+                                <img src="{{ Storage::url($image->image_url) }}"
+                                     alt="Rezeptbild"
+                                     class="w-full h-32 object-cover rounded-lg border border-stone-700">
+
+                                <label class="absolute top-2 right-2 bg-red-600/90 hover:bg-red-500 text-white p-1.5 rounded-full cursor-pointer transition-colors">
+                                    <input type="checkbox"
+                                           name="delete_images[]"
+                                           value="{{ $image->id }}"
+                                           class="hidden">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </label>
+
+                                <div class="absolute bottom-2 left-2 bg-stone-900/80 text-stone-200 text-xs px-2 py-1 rounded">
+                                    #{{ $image->sort_order }}
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="mb-4 flex items-center gap-2">
+                    <input type="checkbox"
+                           id="replace_all_images"
+                           name="replace_images"
+                           value="1"
+                           class="h-4 w-4 rounded border-stone-600 bg-stone-700 text-emerald-500 focus:ring-emerald-500/50">
+                    <label for="replace_all_images" class="text-sm text-stone-400 cursor-pointer">
+                        Alle bestehenden Bilder ersetzen
+                    </label>
                 </div>
             @endif
 
-            <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-64 bg-stone-900 border border-dashed border-emerald-500/50 rounded-lg cursor-pointer hover:bg-stone-800 transition-colors @error('images.*') border-red-500/70 @enderror">
+            <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-48 bg-stone-900 border-2 border-dashed border-emerald-500/50 rounded-lg cursor-pointer hover:bg-stone-800 hover:border-emerald-500/70 transition-all @error('images.*') border-red-500/70 @enderror">
                 <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                    <svg class="w-8 h-8 mb-4 text-stone-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h3a3 3 0 0 0 0-6h-.025a5.56 5.56 0 0 0 .025-.5A5.5 5.5 0 0 0 7.207 9.021C7.137 9.017 7.071 9 7 9a4 4 0 1 0 0 8h2.167M12 19v-9m0 0-2 2m2-2 2 2"/>
+                    <svg class="w-10 h-10 mb-3 text-stone-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                     </svg>
-                    <p class="mb-2 text-sm text-stone-300"><span class="font-semibold">Klicken zum Hochladen</span> oder Drag & Drop</p>
-                    <p class="text-xs text-stone-500">PNG, JPG, WebP (max. 5 MB)</p>
+                    <p class="mb-2 text-sm text-stone-300">
+                        <span class="font-semibold">Klicken zum Hochladen</span> oder Drag & Drop
+                    </p>
+                    <p class="text-xs text-stone-500">PNG, JPG, WebP (max. 5 MB pro Bild, max. 10 Bilder)</p>
                 </div>
                 <input id="dropzone-file" name="images[]" type="file" class="hidden" multiple accept="image/*">
             </label>
+
             @error('images.*')
-                <p class="text-red-400 text-xs mt-1">{{ $message }}</p>
+                <p class="text-red-400 text-xs mt-2">{{ $message }}</p>
             @enderror
         </div>
 

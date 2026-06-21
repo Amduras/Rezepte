@@ -10,7 +10,7 @@
               action="{{ route('recipes.store') }}"
               method="POST"
               enctype="multipart/form-data">
-
+            @csrf
             @include('recipes.partials.form')
 
         </form>

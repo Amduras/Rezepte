@@ -1,14 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\RecipeController;
 
-// Startseite
-Route::get('/', fn() => view('welcome'))->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Auth (nur für Gäste)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -16,15 +14,15 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
-// Logout (nur für eingeloggte User)
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // Rezepte
     Route::get('/recipes/create', [RecipeController::class, 'create'])->name('recipes.create');
     Route::post('/recipes', [RecipeController::class, 'store'])->name('recipes.store');
     Route::get('/recipes/{recipe}', [RecipeController::class, 'show'])->name('recipes.show');
     Route::get('/recipes/{recipe}/edit', [RecipeController::class, 'edit'])->name('recipes.edit');
+    Route::patch('/recipes/{recipe}/publish', [RecipeController::class, 'publish'])->name('recipes.publish');
+    Route::patch('/recipes/{recipe}/unpublish', [RecipeController::class, 'unpublish'])->name('recipes.unpublish');
     Route::put('/recipes/{recipe}', [RecipeController::class, 'update'])->name('recipes.update');
     Route::delete('/recipes/{recipe}', [RecipeController::class, 'destroy'])->name('recipes.destroy');
 });
