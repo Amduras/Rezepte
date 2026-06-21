@@ -8,13 +8,31 @@ use App\Enums\RecipeDifficulty;
 use App\Enums\RecipeStatus;
 use App\Http\Requests\StoreRecipeRequest;
 use App\Models\Recipe;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class RecipeController extends Controller
 {
+    /**
+     * Prüft, ob der aktuelle User das Rezept bearbeiten darf.
+     * Nur der Autor oder ein Admin hat Zugriff.
+     */
+    private function canEditRecipe(Recipe $recipe): bool
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+        return $user->id === $recipe->author_id || $user->isAdmin();
+    }
+
     /**
      * Zeigt das Formular zum Erstellen eines Rezepts
      */
@@ -30,44 +48,140 @@ class RecipeController extends Controller
      */
     public function store(StoreRecipeRequest $request): RedirectResponse
     {
-        $imageUrl = null;
-        if ($request->hasFile('images')) {
-            $image = $request->file('images')[0];
-            $imageUrl = $image->store('recipes', 'public');
+        $recipe = $this->persistRecipe($request);
+
+        return redirect()
+            ->route('recipes.show', $recipe)
+            ->with('success', 'Rezept wurde erfolgreich erstellt!');
+    }
+
+    /**
+     * Detailansicht eines Rezepts
+     */
+    public function show(Recipe $recipe): View
+    {
+        $recipe->load(['author', 'ingredients', 'steps']);
+
+        return view('recipes.show', compact('recipe'));
+    }
+
+    /**
+     * Bearbeitungs-Formular
+     */
+    public function edit(Recipe $recipe): View
+    {
+        if (!$this->canEditRecipe($recipe)) {
+            abort(403, 'Du darfst dieses Rezept nicht bearbeiten.');
         }
 
-        $tags = null;
-        if ($request->filled('tags')) {
-            $tags = array_values(
-                array_filter(
-                    array_map('trim', explode(',', $request->input('tags')))
-                )
-            );
+        $recipe->load(['ingredients', 'steps']);
+
+        return view('recipes.edit', [
+            'recipe' => $recipe,
+            'difficulties' => RecipeDifficulty::cases(),
+        ]);
+    }
+
+    /**
+     * Aktualisiert ein bestehendes Rezept
+     */
+    public function update(StoreRecipeRequest $request, Recipe $recipe): RedirectResponse
+    {
+        if (!$this->canEditRecipe($recipe)) {
+            abort(403, 'Du darfst dieses Rezept nicht bearbeiten.');
         }
 
-        $recipe = DB::transaction(function () use ($request, $imageUrl, $tags): Recipe {
+        $this->persistRecipe($request, $recipe);
 
-            // 1) Rezept anlegen
-            $recipe = Recipe::create([
-                'author_id'   => Auth::id(),
+        return redirect()
+            ->route('recipes.show', $recipe)
+            ->with('success', 'Rezept wurde erfolgreich aktualisiert!');
+    }
+
+    private function parseTags(?string $tags): ?array
+    {
+        if (!$tags) return null;
+        return array_values(
+            array_filter(
+                array_map('trim', explode(',', $tags))
+            )
+        );
+    }
+
+    /**
+     * Löscht ein Rezept (Soft-Delete)
+     */
+    public function destroy(Recipe $recipe): RedirectResponse
+    {
+        if (!$this->canEditRecipe($recipe)) {
+            abort(403);
+        }
+
+        // Alle Bilder löschen
+        foreach ($recipe->images as $image) {
+            Storage::disk('public')->delete($image->image_url);
+        }
+
+        $recipe->delete();
+
+        return redirect()->route('home')->with('success', 'Rezept wurde gelöscht.');
+    }
+
+    /**
+     * Gemeinsame Logik zum Speichern/Aktualisieren eines Rezepts.
+     * Wird von store() und update() verwendet.
+     *
+     * @param Recipe|null $recipe Wenn null → neues Rezept wird erstellt
+     */
+    private function persistRecipe(StoreRecipeRequest $request, ?Recipe $recipe = null): Recipe
+    {
+        return DB::transaction(function () use ($request, $recipe): Recipe {
+
+            // 📝 Rezept-Daten
+            $data = [
                 'title'       => $request->input('title'),
                 'description' => $request->input('description'),
                 'prep_time'   => $request->input('prep_time'),
                 'cook_time'   => $request->input('cook_time'),
                 'servings'    => $request->input('servings'),
                 'difficulty'  => RecipeDifficulty::from($request->input('difficulty')),
-                'image_url'   => $imageUrl,
-                'tags'        => $tags,
-                'status'      => RecipeStatus::Draft,
-            ]);
+                'tags'        => $this->parseTags($request->input('tags')),
+            ];
 
-            // 2) Zutaten speichern
+            if ($recipe) {
+                $recipe->update($data);
+            } else {
+                $data['author_id'] = Auth::id();
+                $data['status'] = RecipeStatus::Draft;
+                $recipe = Recipe::create($data);
+            }
+
+            // 🖼️ Bilder verarbeiten
+            if ($request->hasFile('images')) {
+                // Alte Bilder löschen (nur bei Update)
+                if ($recipe && $request->has('replace_images')) {
+                    foreach ($recipe->images as $oldImage) {
+                        Storage::disk('public')->delete($oldImage->image_url);
+                        $oldImage->delete();
+                    }
+                }
+
+                // Neue Bilder speichern
+                $sortOrder = $recipe->images()->max('sort_order') ?? 0;
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('recipes', 'public');
+                    $recipe->images()->create([
+                        'image_url' => $path,
+                        'sort_order' => ++$sortOrder,
+                    ]);
+                }
+            }
+
+            // 🥕 Zutaten
+            $recipe->ingredients()->delete();
             if ($request->has('ingredients')) {
                 foreach ($request->input('ingredients') as $ingredient) {
-                    if (empty($ingredient['name'])) {
-                        continue;
-                    }
-
+                    if (empty($ingredient['name'])) continue;
                     $recipe->ingredients()->create([
                         'name'     => $ingredient['name'],
                         'quantity' => $ingredient['quantity'] ?? null,
@@ -77,14 +191,12 @@ class RecipeController extends Controller
                 }
             }
 
-            // 3) Zubereitungsschritte speichern
+            // 👣 Schritte
+            $recipe->steps()->delete();
             if ($request->has('steps')) {
                 $stepNumber = 1;
                 foreach ($request->input('steps') as $step) {
-                    if (empty(trim($step['instruction'] ?? ''))) {
-                        continue;
-                    }
-
+                    if (empty(trim($step['instruction'] ?? ''))) continue;
                     $recipe->steps()->create([
                         'step_number' => $stepNumber++,
                         'instruction' => $step['instruction'],
@@ -94,9 +206,5 @@ class RecipeController extends Controller
 
             return $recipe;
         });
-
-        return redirect()
-            ->route('recipes.show', $recipe)
-            ->with('success', 'Rezept wurde erfolgreich erstellt!');
     }
 }

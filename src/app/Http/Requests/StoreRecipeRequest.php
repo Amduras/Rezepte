@@ -6,13 +6,14 @@ namespace App\Http\Requests;
 
 use App\Enums\RecipeDifficulty;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class StoreRecipeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check();
+        return Auth::check();
     }
 
     /**
@@ -21,7 +22,6 @@ class StoreRecipeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Rezept-Daten
             'title'       => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:65535'],
             'prep_time'   => ['nullable', 'integer', 'min:0', 'max:1440'],
@@ -30,18 +30,16 @@ class StoreRecipeRequest extends FormRequest
             'difficulty'  => ['required', Rule::enum(RecipeDifficulty::class)],
             'tags'        => ['nullable', 'string', 'max:500'],
 
-            // Bilder
-            'images'      => ['nullable', 'array', 'max:5'],
+            'images'      => ['nullable', 'array', 'max:10'],
             'images.*'    => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'replace_images' => ['nullable', 'boolean'],
 
-            // Zutaten
             'ingredients'                => ['nullable', 'array'],
             'ingredients.*.name'         => ['required_with:ingredients', 'string', 'max:150'],
             'ingredients.*.quantity'     => ['nullable', 'string', 'max:50'],
             'ingredients.*.unit'         => ['nullable', 'string', 'max:30'],
             'ingredients.*.note'         => ['nullable', 'string', 'max:65535'],
 
-            // Schritte
             'steps'                      => ['nullable', 'array'],
             'steps.*.instruction'        => ['required_with:steps', 'string', 'max:65535'],
         ];

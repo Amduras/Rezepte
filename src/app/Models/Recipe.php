@@ -102,6 +102,16 @@ class Recipe extends Model
         return $remaining > 0 ? "{$hours} Std. {$remaining} Min." : "{$hours} Std.";
     }
 
+    public function images(): HasMany
+    {
+        return $this->hasMany(RecipeImage::class)->orderBy('sort_order');
+    }
+
+    // Optional: Helper für das erste Bild (als Fallback)
+    public function getPrimaryImageAttribute(): ?string
+    {
+        return $this->images->first()?->image_url ?? $this->image_url;
+    }
 
     public function isPublished(): bool
     {
