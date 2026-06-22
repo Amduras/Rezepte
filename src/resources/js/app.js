@@ -603,3 +603,72 @@ function imagePreview() {
         });
     });
 }
+
+// =============================================
+// 👤 USER-MENÜ DROPDOWN (Click-Toggle)
+// =============================================
+function userMenuToggle() {
+    const button = document.getElementById('user-menu-button');
+    const dropdown = document.getElementById('user-menu-dropdown');
+    const arrow = document.getElementById('user-menu-arrow');
+
+    if (!button || !dropdown) return;
+
+    let isOpen = false;
+
+    function toggleMenu() {
+        isOpen = !isOpen;
+
+        if (isOpen) {
+            dropdown.classList.remove('opacity-0', 'invisible');
+            dropdown.classList.add('opacity-100', 'visible');
+            dropdown.style.transform = 'translateY(0)';
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            dropdown.classList.add('opacity-0', 'invisible');
+            dropdown.classList.remove('opacity-100', 'visible');
+            dropdown.style.transform = 'translateY(-10px)';
+            arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    function closeMenu() {
+        if (isOpen) {
+            isOpen = false;
+            dropdown.classList.add('opacity-0', 'invisible');
+            dropdown.classList.remove('opacity-100', 'visible');
+            dropdown.style.transform = 'translateY(-10px)';
+            arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    // Button-Click
+    button.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMenu();
+    });
+
+    // Schließen bei Klick außerhalb
+    document.addEventListener('click', (e) => {
+        if (!dropdown.contains(e.target) && !button.contains(e.target)) {
+            closeMenu();
+        }
+    });
+
+    // Schließen bei Escape-Taste
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeMenu();
+        }
+    });
+}
+
+// Im DOMContentLoaded-Block aufrufen:
+document.addEventListener('DOMContentLoaded', () => {
+    // ... bestehende Funktionen ...
+
+    // User-Menü
+    if (document.getElementById('user-menu-button')) {
+        userMenuToggle();
+    }
+});

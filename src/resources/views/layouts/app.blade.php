@@ -39,17 +39,22 @@
                         + Neues Rezept
                     </a>
 
-                    <div class="relative group">
-                        <button class="text-stone-300 hover:text-emerald-500 transition-colors flex items-center gap-1">
+                    <div class="relative" id="user-menu-container">
+                        <button type="button"
+                                id="user-menu-button"
+                                class="text-stone-300 hover:text-emerald-500 transition-colors flex items-center gap-1 cursor-pointer">
                             {{ Auth::user()->username }}
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg id="user-menu-arrow" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                             </svg>
                         </button>
 
-                        <div class="absolute right-0 mt-2 w-48 bg-stone-800 border border-stone-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                        {{-- Dropdown-Menü --}}
+                        <div id="user-menu-dropdown"
+                             class="absolute right-0 mt-2 w-48 bg-stone-800 border border-stone-700 rounded-lg shadow-xl opacity-0 invisible transition-all duration-200 z-50"
+                             style="transform: translateY(-10px);">
                             <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700 hover:text-emerald-500 transition-colors">
-                                ️ Profil bearbeiten
+                                ⚙️ Profil bearbeiten
                             </a>
                             <a href="{{ route('my-recipes.index') }}" class="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700 hover:text-emerald-500 transition-colors">
                                 📝 Meine Rezepte
