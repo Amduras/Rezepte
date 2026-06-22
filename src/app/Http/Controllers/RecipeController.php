@@ -202,7 +202,7 @@ class RecipeController extends Controller
                 $sortOrder = $recipe->images()->max('sort_order') ?? 0;
                 foreach ($request->file('images') as $image) {
                     $path = $image->store('recipes', 'public');
-                    $recipe->images()->create([
+	                   $recipe->images()->create([
                         'image_url' => $path,
                         'sort_order' => ++$sortOrder,
                     ]);
@@ -235,7 +235,6 @@ class RecipeController extends Controller
                     ]);
                 }
             }
-
             return $recipe;
         });
     }

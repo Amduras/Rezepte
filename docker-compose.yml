@@ -14,6 +14,7 @@ services:
     volumes:
       - ./src:/var/www
       - ./docker/entrypoint-app.sh:/docker/entrypoint-app.sh:ro
+      - ./src/php/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
     entrypoint: /docker/entrypoint-app.sh
     command: ["php-fpm"]
     networks:
