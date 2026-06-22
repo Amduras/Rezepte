@@ -64,9 +64,16 @@ class User extends Authenticatable
         return $this->hasMany(Recipe::class, 'author_id');
     }
 
+    // Beziehung: Rezepte, die der User als Favorit gespeichert hat
     public function favorites()
     {
         return $this->belongsToMany(Recipe::class, 'user_favorites')
-            ->withTimestamps();
+            ->withPivot('created_at');
+    }
+
+    // Helper: Prüfen ob ein Rezept favorisiert ist
+    public function hasFavorited(Recipe $recipe): bool
+    {
+        return $this->favorites()->where('recipe_id', $recipe->id)->exists();
     }
 }

@@ -30,7 +30,6 @@
             @endif
         </div>
     </div>
-
     @php
         $images = $recipe->images;
         $totalImages = $images->count();
@@ -106,7 +105,35 @@
 
         </div>
     @endif
+<div class="max-w-4xl mx-auto px-4 mb-6">
+        @auth
+            <form action="{{ route('recipes.favorite', $recipe) }}" method="POST">
+                @csrf
+                <button type="submit"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all duration-300 shadow-lg
+                        {{ Auth::user()->favorites->contains($recipe->id)
+                            ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-500/20'
+                            : 'bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700' }}">
 
+                    <svg class="w-5 h-5 transition-transform active:scale-125"
+                         fill="{{ Auth::user()->favorites->contains($recipe->id) ? 'currentColor' : 'none' }}"
+                         stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+
+                    {{ Auth::user()->favorites->contains($recipe->id) ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen' }}
+                </button>
+            </form>
+        @else
+            <a href="{{ route('login') }}"
+               class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium bg-stone-800 hover:bg-stone-700 text-stone-400 border border-stone-700 transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+                Anmelden, um zu favorisieren
+            </a>
+        @endauth
+    </div>
     <div class="max-w-4xl mx-auto px-4 mb-6">
         <div class="flex justify-between flex-col md:flex-row gap-4">
             <span class="text-center bg-emerald-500/20 border border-emerald-500/30 p-3 rounded-xl flex-1">
@@ -203,15 +230,12 @@
                         <h2 class="text-emerald-500 text-2xl mb-3">Zutatenliste</h2>
 
                         @if($recipe->ingredients->isNotEmpty())
-                            {{-- 1. 'invisible' entfernt & data-base-servings hinzugefügt --}}
                             <ul id="ingredients-list" class="space-y-2" data-base-servings="{{ $recipe->servings ?? 1 }}">
                                 @foreach($recipe->ingredients as $ingredient)
-                                    {{-- 2. data-quantity hinzugefügt --}}
                                     <li class="text-stone-300 flex gap-2" data-quantity="{{ $ingredient->quantity }}">
                                         <span class="text-emerald-400 shrink-0">•</span>
                                         <span class="ingredient-text">
                                             @if($ingredient->quantity)
-                                                {{-- 3. Klasse 'qty' hinzugefügt --}}
                                                 <span class="font-semibold text-stone-100 qty">{{ $ingredient->quantity }}</span>
                                             @endif
                                             @if($ingredient->unit)
@@ -237,7 +261,6 @@
     @auth
         @if(Auth::id() === $recipe->author_id || Auth::user()->isAdmin())
             <div class="max-w-4xl mx-auto px-4 py-8 flex gap-3 justify-end">
-                {{-- Veröffentlichen / Als Entwurf speichern --}}
                 @if($recipe->isDraft())
                     <form action="{{ route('recipes.publish', $recipe) }}" method="POST">
                         @csrf

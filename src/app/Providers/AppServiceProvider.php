@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,8 +21,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Erzwingt HTTPS für alle asset() und url() Helfer, wenn wir über DuckDNS laufen
-//        if (str_contains(request()->getHost(), 'duckdns.org')) {
-  //          URL::forceScheme('https');
-   //     }
+        //        if (str_contains(request()->getHost(), 'duckdns.org')) {
+        //          URL::forceScheme('https');
+        //     }
+        Paginator::useTailwind();
     }
 }

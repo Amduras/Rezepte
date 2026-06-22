@@ -141,6 +141,15 @@ class RecipeController extends Controller
         return redirect()->route('home')->with('success', 'Rezept wurde gelöscht.');
     }
 
+    public function myRecipes()
+    {
+        $recipes = Recipe::where('author_id', auth()->id())
+            ->latest()
+            ->paginate(12);
+
+        return view('recipes.my-recipes', compact('recipes'));
+    }
+
     /**
      * Gemeinsame Logik zum Speichern/Aktualisieren eines Rezepts.
      * Wird von store() und update() verwendet.
