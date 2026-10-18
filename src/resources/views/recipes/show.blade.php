@@ -260,7 +260,7 @@
 
     @auth
         @if(Auth::id() === $recipe->author_id || Auth::user()->isAdmin())
-            <div class="max-w-4xl mx-auto px-4 py-8 flex gap-3 justify-end">
+            <div class="max-w-4xl mx-auto px-4 py-8 flex gap-3 justify-end sticky-b0">
                 @if($recipe->isDraft())
                     <form action="{{ route('recipes.publish', $recipe) }}" method="POST">
                         @csrf

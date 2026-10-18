@@ -32,3 +32,14 @@
     background-position: center right 0.5rem;
     background-size: 1.25rem 1.25rem;
 }
+
+.sticky-b0{
+	position: sticky;
+	bottom: 0;
+}
+
+@media (width < 767px){
+	.m-overflow{
+		overflow-x: hidden;
+	}
+}

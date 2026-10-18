@@ -11,7 +11,7 @@
                     ✨ Heute für dich entdeckt
                 </h2>
 
-                <div class="relative group">
+                <div class="relative group m-overflow">
                     <div id="daily-carousel" class="flex transition-transform duration-500 ease-out">
                         @foreach($dailyRecipes as $index => $recipe)
                             <div class="daily-slide min-w-full px-2 md:px-4 lg:px-8">
